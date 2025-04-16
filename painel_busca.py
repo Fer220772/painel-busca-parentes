@@ -94,3 +94,21 @@ with col_hist2:
         if st.button("🧹 Limpar histórico"):
             st.session_state["buscas"] = []
             st.experimental_rerun()
+
+
+st.subheader("🔍 Empresas Onde a Pessoa Pode Ter Trabalhado")
+
+if nome_completo:
+    nome_url = "+".join(nome_completo.split())
+    linkedin_url = f"https://www.linkedin.com/search/results/people/?keywords={nome_url}"
+    escavador_url = f"https://www.escavador.com/busca?q={nome_url}"
+    google_empresas_url = f"https://www.google.com/search?q=%22{nome_url}%22+trabalhou+em"
+
+    st.markdown("**Buscar no LinkedIn:**")
+    st.markdown(f"[{linkedin_url}]({linkedin_url})", unsafe_allow_html=True)
+
+    st.markdown("**Buscar no Escavador:**")
+    st.markdown(f"[{escavador_url}]({escavador_url})", unsafe_allow_html=True)
+
+    st.markdown("**Buscar no Google por empresas onde trabalhou:**")
+    st.markdown(f"[{google_empresas_url}]({google_empresas_url})", unsafe_allow_html=True)
