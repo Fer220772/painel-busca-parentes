@@ -1,108 +1,73 @@
+
 import streamlit as st
 import pandas as pd
-import base64
-import urllib.parse
 
-st.set_page_config(page_title="Painel de Busca de Parentes", layout="wide")
-st.title("👨‍👩‍👧‍👦 Painel de Busca de Parentes")
+st.set_page_config(page_title="Painel de Busca de Parentes", layout="centered")
 
-# Histórico de buscas
-if "buscas" not in st.session_state:
-    st.session_state["buscas"] = []
+st.title("🔎 Painel de Busca de Parentes")
 
-# Entradas principais
+st.markdown("Preencha os dados abaixo para gerar links de busca e histórico.")
+
 with st.form("form_busca"):
-    st.subheader("🔍 Parâmetros de busca")
-    nome = st.text_input("Nome completo")
+    nome_completo = st.text_input("Nome completo")
     rg = st.text_input("RG")
     cpf = st.text_input("CPF")
     celular = st.text_input("Celular")
     cidade = st.text_input("Cidade")
-    sobrenome_busca = st.text_input("Busca reversa por sobrenome")
+    sobrenome = st.text_input("Sobrenome (para busca reversa)")
     submitted = st.form_submit_button("Buscar")
 
-# Variações de nome
-def gerar_variacoes(nome):
-    partes = nome.strip().split()
-    variacoes = set()
-    if len(partes) >= 2:
-        variacoes.add(f"{partes[0]} {partes[-1]}")
-        variacoes.add(f"{partes[0][0]}. {partes[-1]}")
-        variacoes.add(f"{partes[-1]}, {partes[0]}")
-    variacoes.add(nome.upper())
-    return list(variacoes)
+st.markdown("## 📂 Histórico de Buscas")
+if "historico" not in st.session_state:
+    st.session_state.historico = []
 
-# Simula busca
-def buscar_registros(nome, cidade):
-    sobrenome = nome.strip().split()[-1] if nome else "Silva"
-    return [
-        {"Nome": nome or "João " + sobrenome, "CPF": "000.000.000-00", "RG": "1.111.111", "Celular": "(47) 99999-0000", "Cidade": cidade or "Exemplo"},
-        {"Nome": "Maria " + sobrenome, "CPF": "111.111.111-11", "RG": "2.222.222", "Celular": "(47) 98888-0000", "Cidade": cidade or "Exemplo"},
-    ]
-
-# Resultado
 if submitted:
-    resultados = buscar_registros(nome, cidade)
-    df = pd.DataFrame(resultados)
-    st.session_state["buscas"].append({
-        "Nome": nome,
+    entrada = {
+        "Nome": nome_completo,
         "RG": rg,
         "CPF": cpf,
         "Celular": celular,
         "Cidade": cidade,
-        "Sobrenome": sobrenome_busca
-    })
+        "Sobrenome": sobrenome,
+    }
+    st.session_state.historico.append(entrada)
 
-    st.subheader("📋 Resultados encontrados:")
-    st.dataframe(df)
+if st.session_state.historico:
+    df = pd.DataFrame(st.session_state.historico)
+    st.dataframe(df, use_container_width=True)
 
-    # Exportar CSV
-    csv = df.to_csv(index=False)
-    b64 = base64.b64encode(csv.encode()).decode()
-    st.markdown(f"📥 [Baixar CSV](data:file/csv;base64,{b64})", unsafe_allow_html=True)
+    if st.button("🧹 Limpar Histórico"):
+        st.session_state.historico = []
+        st.experimental_rerun()
 
-    # Variações de nome
-    st.markdown("🧠 **Variações de nome sugeridas:**")
-    st.write(", ".join(gerar_variacoes(nome)))
-
-    # Busca Google e redes sociais
-    st.markdown("🌐 **Buscar online:**")
-    query = urllib.parse.quote_plus(f"{nome} {cidade}")
-    st.markdown(f"- [🔎 Google](https://www.google.com/search?q={query})", unsafe_allow_html=True)
-    st.markdown(f"- [🔵 Facebook](https://www.facebook.com/search/top/?q={query})", unsafe_allow_html=True)
-    st.markdown(f"- [📸 Instagram](https://www.instagram.com/{nome.replace(' ', '').lower()}/)", unsafe_allow_html=True)
-    st.markdown(f"- [🐦 Twitter](https://twitter.com/search?q={query})", unsafe_allow_html=True)
-
-# Upload de documentos
-st.markdown("---")
-st.subheader("📂 Upload de Documentos Antigos")
-arquivo = st.file_uploader("Envie certidões, imagens ou PDFs antigos", type=["pdf", "png", "jpg", "jpeg"])
-if arquivo:
-    st.success(f"Arquivo '{arquivo.name}' enviado com sucesso!")
-
-# Histórico de buscas
-st.markdown("---")
-st.subheader("📌 Histórico de buscas")
-col_hist1, col_hist2 = st.columns([4,1])
-with col_hist1:
-    if st.session_state["buscas"]:
-        st.dataframe(pd.DataFrame(st.session_state["buscas"]))
-    else:
-        st.info("Nenhuma busca realizada ainda.")
-with col_hist2:
-    if st.session_state["buscas"]:
-        if st.button("🧹 Limpar histórico"):
-            st.session_state["buscas"] = []
-            st.experimental_rerun()
-
-
-st.subheader("🔍 Empresas Onde a Pessoa Pode Ter Trabalhado")
-
+st.markdown("## 🌐 Buscas Diretas (Google e Redes Sociais)")
 if nome_completo:
     nome_url = "+".join(nome_completo.split())
-    linkedin_url = f"https://www.linkedin.com/search/results/people/?keywords={nome_url}"
-    escavador_url = f"https://www.escavador.com/busca?q={nome_url}"
-    google_empresas_url = f"https://www.google.com/search?q=%22{nome_url}%22+trabalhou+em"
+    google_url = f"https://www.google.com/search?q={nome_url}"
+    fb_url = f"https://www.facebook.com/search/top/?q={nome_url}"
+    ig_url = f"https://www.instagram.com/{nome_url.lower().replace(' ', '')}"
+    twitter_url = f"https://twitter.com/search?q={nome_url}"
+
+    st.markdown(f"[🔎 Google]({google_url})", unsafe_allow_html=True)
+    st.markdown(f"[📘 Facebook]({fb_url})", unsafe_allow_html=True)
+    st.markdown(f"[📸 Instagram]({ig_url})", unsafe_allow_html=True)
+    st.markdown(f"[🐦 Twitter]({twitter_url})", unsafe_allow_html=True)
+
+st.markdown("## 🔁 Busca Reversa por Sobrenome e Cidade")
+if sobrenome or cidade:
+    termo = f"{sobrenome} {cidade}".strip().replace(" ", "+")
+    url = f"https://www.google.com/search?q={termo}"
+    st.markdown(f"Buscar por sobrenome + cidade no Google: [{url}]({url})", unsafe_allow_html=True)
+
+st.markdown("## 🧾 Upload de Documentos Antigos")
+st.file_uploader("Envie certidões, fotos ou outros documentos antigos (formato PDF, JPG, PNG)", type=["pdf", "jpg", "jpeg", "png"])
+
+st.markdown("## 🏢 Empresas Onde a Pessoa Pode Ter Trabalhado")
+if nome_completo:
+    nome_encoded = "+".join(nome_completo.split())
+    linkedin_url = f"https://www.linkedin.com/search/results/people/?keywords={nome_encoded}"
+    escavador_url = f"https://www.escavador.com/busca?q={nome_encoded}"
+    google_empresas_url = f"https://www.google.com/search?q=%22{nome_encoded}%22+trabalhou+em"
 
     st.markdown("**Buscar no LinkedIn:**")
     st.markdown(f"[{linkedin_url}]({linkedin_url})", unsafe_allow_html=True)
