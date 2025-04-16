@@ -1,9 +1,10 @@
-# Painel de Busca de Parentes
+# Painel de Busca de Parentes (Versão Completa)
 
-Versão com:
-- Busca por nome, CPF, RG, celular e cidade
-- Busca reversa por sobrenome
-- Links automáticos para Google, redes sociais
-- Sugestões de empresas onde a pessoa pode ter trabalhado
-- Upload de documentos
-- Histórico com botão de limpeza
+Inclui:
+- Busca por nome completo, RG, CPF, celular
+- Busca por sobrenome e cidade
+- Google + Redes sociais (LinkedIn, Facebook, Instagram, Twitter)
+- Filtros avançados de empresa: cidade, cargo, CNPJ
+- OCR de documentos (PDF ou imagem)
+- Histórico de buscas com limpeza
+- Pronto para subir no GitHub e rodar via Streamlit Cloud
