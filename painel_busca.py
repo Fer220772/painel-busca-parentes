@@ -1,88 +1,93 @@
 import streamlit as st
-import urllib.parse
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
-from io import StringIO
-import pdfkit
+import base64
+import graphviz
+import folium
+from streamlit_folium import st_folium
 
-def gerar_links_busca(nome, cidade):
-    query_base = f"{nome} {cidade}".strip()
-    query_encoded = urllib.parse.quote_plus(query_base)
-    return {
-        "Google Redes Sociais": f"https://www.google.com/search?q={query_encoded}+site:facebook.com+OR+site:linkedin.com+OR+site:instagram.com",
-        "FamilySearch": f"https://www.familysearch.org/search/?q={query_encoded}",
-        "MyHeritage": f"https://www.myheritage.com.br/names?s={query_encoded}",
-    }
+st.set_page_config(page_title="Painel Genealógico Aprimorado", layout="wide")
+st.title("🌐 Painel Genealógico Aprimorado")
 
-def buscar_no_google(query):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    url = f"https://www.google.com/search?q={urllib.parse.quote_plus(query)}"
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
-    resultados = []
-    for resultado in soup.select("div.g"):
-        titulo_tag = resultado.find("h3")
-        link_tag = resultado.find("a")
-        if titulo_tag and link_tag:
-            resultados.append({
-                "titulo": titulo_tag.text,
-                "link": link_tag['href']
-            })
+# Histórico de buscas na sessão
+if "buscas" not in st.session_state:
+    st.session_state["buscas"] = []
+
+# Entrada de dados
+col1, col2 = st.columns(2)
+with col1:
+    nome_completo = st.text_input("Nome completo", "")
+with col2:
+    cidade = st.text_input("Cidade", "")
+
+sobrenome = ""
+if nome_completo:
+    sobrenome = nome_completo.strip().split()[-1]
+
+# Sugestão de variações
+def gerar_variacoes(nome):
+    partes = nome.strip().split()
+    variacoes = set()
+    if len(partes) >= 2:
+        variacoes.add(f"{partes[0]} {partes[-1]}")
+        variacoes.add(f"{partes[0][0]}. {partes[-1]}")
+        variacoes.add(f"{partes[-1]}, {partes[0]}")
+    variacoes.add(nome.upper())
+    return list(variacoes)
+
+# Busca simulada
+def buscar_registros(sobrenome, cidade):
+    resultados = [
+        {"Nome": "Carlos " + sobrenome, "Cidade": cidade or "Exemplo", "Telefone": "(47) 90000-1234"},
+        {"Nome": "Maria " + sobrenome, "Cidade": cidade or "Exemplo", "Telefone": "(47) 91111-5678"},
+    ]
     return resultados
 
-st.title("🔎 Painel de Busca de Parentes em Lote")
-st.markdown("Cole abaixo uma lista de **nomes completos**, um por linha:")
+# Botão de busca
+if st.button("Buscar"):
+    variacoes = gerar_variacoes(nome_completo)
+    resultados = buscar_registros(sobrenome, cidade)
+    df = pd.DataFrame(resultados)
+    st.session_state["buscas"].append({"nome": nome_completo, "cidade": cidade})
+    st.subheader("Resultados encontrados:")
+    st.dataframe(df)
 
-nomes_texto = st.text_area("Lista de nomes", value="Eduardo Zucco Paoli\nMaria Aparecida Silva")
-cidade = st.text_input("Cidade (opcional)", value="Camboriú SC")
+    csv = df.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()
+    st.markdown(f"📥 [Baixar CSV](data:file/csv;base64,{b64})", unsafe_allow_html=True)
 
-resultados_gerais = []
+    st.markdown("📑 **Variações de nome sugeridas:**")
+    st.write(", ".join(variacoes))
 
-if st.button("Buscar todos"):
-    nomes = [nome.strip() for nome in nomes_texto.split('\n') if nome.strip()]
-    for nome in nomes:
-        st.markdown(f"### 🔍 Resultados para: **{nome}**")
-        resultados = buscar_no_google(f"{nome} {cidade} site:facebook.com OR site:linkedin.com OR site:instagram.com")
-        if resultados:
-            for item in resultados:
-                st.markdown(f"🔗 [{item['titulo']}]({item['link']})")
-                resultados_gerais.append({
-                    "Nome": nome,
-                    "Título": item["titulo"],
-                    "Link": item["link"]
-                })
-        else:
-            st.info(f"Nenhum resultado automático encontrado para **{nome}**.")
-        st.markdown("#### 🌐 Links úteis:")
-        links = gerar_links_busca(nome, cidade)
-        for label, url in links.items():
-            st.markdown(f"- [{label}]({url})", unsafe_allow_html=True)
-        st.markdown("---")
-
-    if resultados_gerais:
-        df = pd.DataFrame(resultados_gerais)
-        csv_buffer = StringIO()
-        df.to_csv(csv_buffer, index=False)
-        csv_bytes = csv_buffer.getvalue().encode('utf-8')
-        st.download_button("📥 Baixar resultados em CSV", data=csv_bytes, file_name="resultados_busca_parentes.csv", mime="text/csv")
-
-        html_string = df.to_html(index=False)
-        pdfkit.from_string(html_string, "resultados_busca_parentes.pdf")
-        with open("resultados_busca_parentes.pdf", "rb") as f:
-            st.download_button("📄 Baixar resultados em PDF", data=f, file_name="resultados_busca_parentes.pdf", mime="application/pdf")
-
+# Árvore Genealógica (exemplo estático)
 st.markdown("---")
-st.subheader("🔄 Busca Reversa por Sobrenome + Cidade")
-sobrenome = st.text_input("Sobrenome (ex: Paoli)")
-cidade_reversa = st.text_input("Cidade", value="Camboriú SC")
+st.subheader("🌳 Árvore Genealógica Visual")
+dot = graphviz.Digraph()
+dot.node("A", "Bisavô João")
+dot.node("B", "Avô Carlos")
+dot.node("C", "Pai Eduardo")
+dot.node("D", nome_completo if nome_completo else "Você")
+dot.edges(["AB", "BC", "CD"])
+st.graphviz_chart(dot)
 
-if st.button("Buscar por sobrenome"):
-    termo = f"{sobrenome} {cidade_reversa} site:facebook.com OR site:linkedin.com OR site:instagram.com"
-    st.markdown(f"### Resultados para sobrenome: **{sobrenome}**, cidade: **{cidade_reversa}**")
-    resultados = buscar_no_google(termo)
-    if resultados:
-        for item in resultados:
-            st.markdown(f"🔗 [{item['titulo']}]({item['link']})")
-    else:
-        st.info("Nenhum resultado encontrado com esse sobrenome.")
+# Mapa de sobrenome
+st.markdown("---")
+st.subheader("🗺️ Distribuição do sobrenome")
+m = folium.Map(location=[-27.0, -48.6], zoom_start=6)
+folium.Marker(location=[-27.0, -48.6], tooltip=f"{sobrenome} - Camboriú").add_to(m)
+st_data = st_folium(m, width=700)
+
+# Upload de documentos
+st.markdown("---")
+st.subheader("📂 Upload de Documentos Antigos")
+upload = st.file_uploader("Envie fotos ou PDFs de documentos antigos", type=["png", "jpg", "jpeg", "pdf"])
+if upload:
+    st.success(f"Arquivo {upload.name} enviado com sucesso!")
+
+# Histórico
+st.markdown("---")
+st.subheader("📌 Histórico de buscas")
+if st.session_state["buscas"]:
+    hist_df = pd.DataFrame(st.session_state["buscas"])
+    st.dataframe(hist_df)
+else:
+    st.info("Nenhuma busca realizada ainda.")

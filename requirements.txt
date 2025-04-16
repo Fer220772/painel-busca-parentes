@@ -1,5 +1,5 @@
 streamlit
-beautifulsoup4
-requests
 pandas
-pdfkit
+graphviz
+folium
+streamlit-folium

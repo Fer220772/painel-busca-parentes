@@ -1,2 +1,3 @@
-# painel-busca-parentes
-Painel de busca de parentes com Streamlit
+# Painel Genealógico Aprimorado
+
+Versão 2 com árvore genealógica, mapa de sobrenome e upload de documentos.
