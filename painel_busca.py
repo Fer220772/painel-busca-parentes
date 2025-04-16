@@ -1,12 +1,10 @@
 import streamlit as st
 import pandas as pd
 import base64
-import graphviz
-import folium
-from streamlit_folium import st_folium
+import urllib.parse
 
 st.set_page_config(page_title="Painel de Busca de Parentes", layout="wide")
-st.title("👨‍👩‍👧‍👦 Painel Completo de Busca de Parentes")
+st.title("👨‍👩‍👧‍👦 Painel de Busca de Parentes")
 
 # Histórico de buscas
 if "buscas" not in st.session_state:
@@ -67,24 +65,13 @@ if submitted:
     st.markdown("🧠 **Variações de nome sugeridas:**")
     st.write(", ".join(gerar_variacoes(nome)))
 
-# Árvore genealógica
-st.markdown("---")
-st.subheader("🌳 Árvore Genealógica")
-dot = graphviz.Digraph()
-dot.node("A", "Bisavô João")
-dot.node("B", "Avô Carlos")
-dot.node("C", "Pai Eduardo")
-dot.node("D", nome if nome else "Você")
-dot.edges(["AB", "BC", "CD"])
-st.graphviz_chart(dot)
-
-# Mapa de distribuição
-st.markdown("---")
-st.subheader("🗺️ Mapa de Sobrenome")
-mapa = folium.Map(location=[-27.0, -48.6], zoom_start=6)
-sobrenome = nome.strip().split()[-1] if nome else "Silva"
-folium.Marker(location=[-27.0, -48.6], tooltip=f"{sobrenome} - {cidade or 'SC'}").add_to(mapa)
-st_folium(mapa, width=700)
+    # Busca Google e redes sociais
+    st.markdown("🌐 **Buscar online:**")
+    query = urllib.parse.quote_plus(f"{nome} {cidade}")
+    st.markdown(f"- [🔎 Google](https://www.google.com/search?q={query})", unsafe_allow_html=True)
+    st.markdown(f"- [🔵 Facebook](https://www.facebook.com/search/top/?q={query})", unsafe_allow_html=True)
+    st.markdown(f"- [📸 Instagram](https://www.instagram.com/{nome.replace(' ', '').lower()}/)", unsafe_allow_html=True)
+    st.markdown(f"- [🐦 Twitter](https://twitter.com/search?q={query})", unsafe_allow_html=True)
 
 # Upload de documentos
 st.markdown("---")
