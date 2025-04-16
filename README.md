@@ -1,3 +1,3 @@
-# Painel Genealógico Aprimorado
+# Painel Completo de Busca de Parentes
 
-Versão 2 com árvore genealógica, mapa de sobrenome e upload de documentos.
+Inclui árvore genealógica, mapa, busca reversa, upload de documentos e mais.

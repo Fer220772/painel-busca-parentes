@@ -5,25 +5,23 @@ import graphviz
 import folium
 from streamlit_folium import st_folium
 
-st.set_page_config(page_title="Painel Genealógico Aprimorado", layout="wide")
-st.title("🌐 Painel Genealógico Aprimorado")
+st.set_page_config(page_title="Painel Completo de Busca de Parentes", layout="wide")
+st.title("🔍 Painel Completo de Busca de Parentes")
 
-# Histórico de buscas na sessão
 if "buscas" not in st.session_state:
     st.session_state["buscas"] = []
 
-# Entrada de dados
+# ENTRADAS
 col1, col2 = st.columns(2)
 with col1:
-    nome_completo = st.text_input("Nome completo", "")
+    nome = st.text_input("Nome completo", "")
+    rg = st.text_input("RG", "")
+    cpf = st.text_input("CPF", "")
 with col2:
+    celular = st.text_input("Celular", "")
     cidade = st.text_input("Cidade", "")
 
-sobrenome = ""
-if nome_completo:
-    sobrenome = nome_completo.strip().split()[-1]
-
-# Sugestão de variações
+# Variações de nome
 def gerar_variacoes(nome):
     partes = nome.strip().split()
     variacoes = set()
@@ -34,56 +32,57 @@ def gerar_variacoes(nome):
     variacoes.add(nome.upper())
     return list(variacoes)
 
-# Busca simulada
-def buscar_registros(sobrenome, cidade):
-    resultados = [
-        {"Nome": "Carlos " + sobrenome, "Cidade": cidade or "Exemplo", "Telefone": "(47) 90000-1234"},
-        {"Nome": "Maria " + sobrenome, "Cidade": cidade or "Exemplo", "Telefone": "(47) 91111-5678"},
+# Simula busca
+def buscar_registros(nome, cidade):
+    sobrenome = nome.strip().split()[-1] if nome else "Sobrenome"
+    return [
+        {"Nome": nome or "João " + sobrenome, "CPF": "000.000.000-00", "RG": "1.111.111", "Celular": "(47) 99999-0000", "Cidade": cidade or "Exemplo"},
+        {"Nome": "Maria " + sobrenome, "CPF": "111.111.111-11", "RG": "2.222.222", "Celular": "(47) 98888-0000", "Cidade": cidade or "Exemplo"},
     ]
-    return resultados
 
-# Botão de busca
-if st.button("Buscar"):
-    variacoes = gerar_variacoes(nome_completo)
-    resultados = buscar_registros(sobrenome, cidade)
+# BOTÃO BUSCAR
+if st.button("🔎 Buscar pessoa"):
+    variacoes = gerar_variacoes(nome)
+    resultados = buscar_registros(nome, cidade)
     df = pd.DataFrame(resultados)
-    st.session_state["buscas"].append({"nome": nome_completo, "cidade": cidade})
-    st.subheader("Resultados encontrados:")
+    st.session_state["buscas"].append({"nome": nome, "cidade": cidade})
+    st.subheader("📋 Resultados encontrados:")
     st.dataframe(df)
 
     csv = df.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
     st.markdown(f"📥 [Baixar CSV](data:file/csv;base64,{b64})", unsafe_allow_html=True)
 
-    st.markdown("📑 **Variações de nome sugeridas:**")
+    st.markdown("🧠 **Variações sugeridas:**")
     st.write(", ".join(variacoes))
 
-# Árvore Genealógica (exemplo estático)
+# ÁRVORE GENEALÓGICA
 st.markdown("---")
 st.subheader("🌳 Árvore Genealógica Visual")
 dot = graphviz.Digraph()
 dot.node("A", "Bisavô João")
 dot.node("B", "Avô Carlos")
 dot.node("C", "Pai Eduardo")
-dot.node("D", nome_completo if nome_completo else "Você")
+dot.node("D", nome if nome else "Você")
 dot.edges(["AB", "BC", "CD"])
 st.graphviz_chart(dot)
 
-# Mapa de sobrenome
+# MAPA DE SOBRENOME
 st.markdown("---")
-st.subheader("🗺️ Distribuição do sobrenome")
+st.subheader("🗺️ Mapa de Distribuição")
 m = folium.Map(location=[-27.0, -48.6], zoom_start=6)
-folium.Marker(location=[-27.0, -48.6], tooltip=f"{sobrenome} - Camboriú").add_to(m)
-st_data = st_folium(m, width=700)
+sobrenome = nome.split()[-1] if nome else "Silva"
+folium.Marker(location=[-27.0, -48.6], tooltip=f"{sobrenome} - {cidade or 'Local'}").add_to(m)
+st_folium(m, width=700)
 
-# Upload de documentos
+# UPLOAD DOCUMENTOS
 st.markdown("---")
 st.subheader("📂 Upload de Documentos Antigos")
-upload = st.file_uploader("Envie fotos ou PDFs de documentos antigos", type=["png", "jpg", "jpeg", "pdf"])
+upload = st.file_uploader("Envie fotos ou PDFs antigos (certidões, imagens)", type=["png", "jpg", "jpeg", "pdf"])
 if upload:
     st.success(f"Arquivo {upload.name} enviado com sucesso!")
 
-# Histórico
+# HISTÓRICO
 st.markdown("---")
 st.subheader("📌 Histórico de buscas")
 if st.session_state["buscas"]:
