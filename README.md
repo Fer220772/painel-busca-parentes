@@ -1,3 +1,3 @@
-# Painel Completo de Busca de Parentes
+# Painel de Busca de Parentes
 
-Inclui árvore genealógica, mapa, busca reversa, upload de documentos e mais.
+Versão com busca completa, árvore genealógica, mapa, upload de documentos e limpeza de histórico.
